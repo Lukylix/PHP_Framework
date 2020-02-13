@@ -8,6 +8,3 @@ spl_autoload_register(function ($class) {
     include './controllers/' . $class . '.php';
   endif;
 });
-
-echo "<h1>Plop</h1>";
-phpinfo();

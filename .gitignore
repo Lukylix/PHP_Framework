@@ -1,2 +1,5 @@
 *.md
 *.sql
+*.pdf
+index.php
+config/databse.json

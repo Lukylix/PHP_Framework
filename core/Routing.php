@@ -31,7 +31,6 @@ class Routing
   {
     return count($tab) == count($tab2) ? true : false;
   }
-  //Add variable uri
   private function addArgument($index)
   {
     $this->arg[] = $this->uri[$index];
@@ -47,28 +46,17 @@ class Routing
     }
     return true;
   }
-  //create object controler et use targetMethode
+
+  //Create object controler et use targetMethod
   private function invoke()
   {
-    $target = $this->config[$this->route];
-    if (is_array($target)) {
-      foreach ($target as $httpMethod => $val) {
-        if ($httpMethod == $_SERVER['REQUEST_METHOD']) $target = $val;
-      }
-      if (is_array($target)) {
-        echo "<p>No matching route for". $_SERVER['REQUEST_METHOD']." HTTP verb</p>";
-      }
-    }
+    $target = $this->getTarget();
     $target = preg_match('/:/', $target) ? $this->splitString($target, '/:/') : false;
     $targetClass = $target ? $target[0] : false;
     $targetMethod = count($target) > 1 ? $target[1] : false;
     if ($targetClass && $targetMethod) {
-      $searchFolders = ["controller", "models", "core"];
-      if (!class_exists($targetClass)) {
-        foreach ($searchFolders as $folder) {
-          if ($this->includeInFolder($folder, $targetClass . '.php')) break;
-        }
-      }
+      $this->includeClass($targetClass);
+      //If class imported
       if (class_exists($targetClass)) {
         $object = new $targetClass();
         if (Method_exists($object, $targetMethod)) {
@@ -83,21 +71,48 @@ class Routing
     echo "<p>Wrong route config missing " . ($targetClass ? "targetMethod " . $targetClass . ':' . $targetMethod : "class $targetClass") . '</p>';
   }
 
+  private function getTarget()
+  {
+    $target = $this->config[$this->route];
+    if (is_array($target)) {
+      foreach ($target as $httpMethod => $val) {
+        if ($httpMethod == $_SERVER['REQUEST_METHOD']) {
+          $target = $val;
+          break;
+        }
+      }
+      if (is_array($target)) {
+        echo "<p>No matching route for" . $_SERVER['REQUEST_METHOD'] . " HTTP verb</p>";
+        return false;
+      }
+    }
+    return $target;
+  }
+
+  private function includeClass($targetClass){
+    $searchFolders = ["controller", "models", "core"];
+      if (!class_exists($targetClass)) {
+        foreach ($searchFolders as $folder) {
+          if ($this->includeInFolder($folder, $targetClass . '.php')) break;
+        }
+      }
+  }
+  //Search recursively in folder to include a php file
   private function includeInFolder(string $path, string $filename)
   {
-
+    //Get all items in folder
     $folderContent = scandir($path);
+    //Remove relative directory . & ..
     $folderContent = preg_grep('/^\.{1,2}$/', $folderContent, PREG_GREP_INVERT);
+
     foreach ($folderContent as $item) {
-      $ext = preg_match('/\./', $item) ? $this->splitString($item, '/\./') : false;
-      $ext = $ext ? $ext[count($ext) - 1] : false;
-      if ($item == $filename && $ext == 'php') {
+      if ($item == $filename) {
         include_once "$path/$filename";
         return true;
       }
-      if (!$ext) {
-        $path .= "/$item";
-        return $this->includeInFolder($path, $filename);
+      //If is folder search in folder
+      if (is_dir($path . "/$item")) {
+        return $this->includeInFolder($path . "/$item", $filename);
       }
     }
     return false;

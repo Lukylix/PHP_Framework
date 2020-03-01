@@ -1,5 +1,5 @@
 <?php
-abstract class EntityModel
+class EntityModel
 {
   private $dao;
   private $id;

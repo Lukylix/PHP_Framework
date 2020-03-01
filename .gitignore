@@ -4,3 +4,6 @@
 # Those files will be ignored on push (see .git/hooks/pre-commit)
 #@index.php
 #@config/database.json
+#@config/routes.json
+
+controller/TestController.php
